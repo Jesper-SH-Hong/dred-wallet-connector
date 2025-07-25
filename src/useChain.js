@@ -31,7 +31,6 @@ export function useChain(chainId) {
       setChainName("");
       return;
     }
-    // chainId는 hex 또는 decimal로 올 수 있음
     const normalized = chainId.startsWith("0x")
       ? parseInt(chainId, 16)
       : Number(chainId);

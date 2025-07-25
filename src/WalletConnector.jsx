@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useChain } from "./useChain";
 
-// Transaction steps as constants to avoid typos
+
 const TX_STEPS = {
   APPROVE: "Please approve transaction in your wallet",
   PENDING: "Waiting for on-chain confirmation...",
@@ -14,13 +14,10 @@ const WalletConnector = () => {
   const [address, setAddress] = useState(null);
   const [network, setNetwork] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [txStatus, setTxStatus] = useState("");
   const [txStep, setTxStep] = useState(null);
-  const [txHash, setTxHash] = useState(null);
   const [walletError, setWalletError] = useState("");
-  const { chainName, allChains, loading: chainLoading } = useChain(network);
+  const { chainName, allChains } = useChain(network);
 
-  // Get explorer URL for current chain
   const getExplorerUrl = useCallback(() => {
     if (!network || !allChains.length) return null;
 
@@ -35,7 +32,6 @@ const WalletConnector = () => {
     return chainInfo?.explorers?.[0]?.url || null;
   }, [network, allChains]);
 
-  // Connect wallet
   const connectWallet = async () => {
     setWalletError("");
     if (window.ethereum) {
@@ -59,27 +55,21 @@ const WalletConnector = () => {
     }
   };
 
-  // Disconnect wallet
   const disconnectWallet = () => {
     setAddress(null);
     setNetwork(null);
     setTxStep(null);
-    setTxStatus("");
-    setTxHash(null);
     setWalletError("");
   };
 
-  // Detect network changes
   useEffect(() => {
     if (window.ethereum) {
       const handleChainChanged = (chainId) => {
         setNetwork(chainId);
       };
 
-      // Listen for account changes
       const handleAccountsChanged = (accounts) => {
         if (accounts.length === 0) {
-          // User disconnected
           disconnectWallet();
         } else if (accounts[0] !== address) {
           setAddress(accounts[0]);
@@ -99,30 +89,25 @@ const WalletConnector = () => {
     }
   }, [address]);
 
-  // Send 0 ETH transaction
   const sendTransaction = async () => {
     if (!window.ethereum || !address) return;
 
     setLoading(true);
-    setTxHash(null);
 
     try {
       const tx = {
         from: address,
-        to: address, // send to self for demo
+        to: address,
         value: "0x0", // 0 ETH
       };
 
-      // Set state to approval before sending transaction
       setTxStep("APPROVE");
 
-      // Send transaction
       const hash = await window.ethereum.request({
         method: "eth_sendTransaction",
         params: [tx],
       });
 
-      setTxHash(hash);
       setTxStep("PENDING");
 
       // Check for confirmation
@@ -161,7 +146,6 @@ const WalletConnector = () => {
     }
   };
 
-  // Render transaction status message
   const renderTxStatusMessage = () => {
     if (walletError)
       return <span className="text-red-400 font-medium">{walletError}</span>;
@@ -175,13 +159,13 @@ const WalletConnector = () => {
       return (
         <div className={`flex items-center ${color} font-medium`}>
           <span className="inline-block w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin mr-2"></span>
-          <span>{TX_STEPS[txStep] || txStatus}</span>
+          <span>{TX_STEPS[txStep]}</span>
         </div>
       );
     }
     return (
       <span className={`${color} font-medium`}>
-        {TX_STEPS[txStep] || txStatus}
+        {TX_STEPS[txStep]}
       </span>
     );
   };
